@@ -1,13 +1,13 @@
 ---
 name: xilan-photo-prompt-analysis
-description: 西兰公园照片提示词分析与生成：逐张反推完整长提示词，自动生成初版、对比原图、修订全文并生成第二版。用于照片复刻、提示词反推和对比优化；明确要求只分析时仅输出文字。
+description: 西兰公园照片提示词分析与生成：分析参考图、生成并对比优化，再用用户上传的本人照片和完整提示词生成同款。明确要求只分析时仅输出文字。
 ---
 
 # Xilan Photo Prompt Analysis
 
 ## Contract
 
-Use Chinese for all user-facing output. Default to a complete per-photo workflow in Doubao Agent: inspect reference → write full prompt → generate version 1 → inspect and compare → rewrite full prompt → generate version 2 → deliver. A normal request to use this skill with photos authorizes this bounded workflow; proceed between stages without asking the user to upload results that you already have or approve each step. Installation alone does not start generation. Honor explicit “只分析”, “不要生成图片” or equivalent instructions: run only the requested textual analysis/comparison and skip generation. Do not modify the photo-template repository or publish user photos.
+Use Chinese for all user-facing output. Default to a complete per-photo workflow in Doubao Agent: inspect reference → write full prompt → generate version 1 → inspect and compare → rewrite full prompt → generate version 2 → deliver → wait for the user’s personal photo → generate their version. A normal request to use this skill with photos authorizes this bounded workflow; proceed between stages without asking the user to upload results that you already have or approve each step. Installation alone does not start generation. Honor explicit “只分析”, “不要生成图片” or equivalent instructions: run only the requested textual analysis/comparison and skip generation. Do not modify the photo-template repository or publish user photos.
 
 ## Target generation model
 
@@ -15,7 +15,7 @@ Use Doubao Agent's available image-generation tool with the explicitly identifie
 
 The user need not specify the model on each invocation. Keep model settings out of routine narration and the visual prompt; answer truthfully if asked. Obey actual platform permissions and stop if the platform requires user action. Do not buy credits or change subscriptions. No fallback to external image services.
 
-Default to **text-to-image** so the generated result tests the prompt's reconstruction quality. Pass the complete validated prompt unchanged, with supported portrait 3:4 settings, and request one image. Do not attach the original photo as an image-to-image reference unless the user explicitly requests image-to-image; if they do, use the original source for both rounds rather than editing version 1. Never truncate the prompt to fit a tool limit: report that limit and stop instead. Keep model, ratio and other supported settings consistent between rounds; reuse a seed only if the tool actually exposes one. Do not invent it.
+For the reference-analysis stage, default to **text-to-image** so the generated result tests the prompt's reconstruction quality. Pass the complete validated prompt unchanged, with supported portrait 3:4 settings, and request one image. Do not attach the reference photo to these two initial text-to-image generations unless the user explicitly requests it. The later personal-photo stage has a separate image-reference rule below. Never truncate the prompt to fit a tool limit: report that limit and stop instead. Keep model, ratio and other supported settings consistent between rounds; reuse a seed only if the tool actually exposes one. Do not invent it.
 
 Read [the complete example](references/full-example.txt) and [the analysis method](references/method.md) before writing. Preserve the example file in full. Follow its depth, narrative structure and causal explanations, but replace its photographic content with evidence from each actual reference. Do not inherit fixed faces, hair, makeup, outfits, props, camera angles, flash, CCD styling, expressions or negative constraints from the example or unrelated skills.
 
@@ -48,7 +48,19 @@ Prioritize the 3–5 highest-impact differences. Preserve successful traits whil
 
 Unless the user requested analysis only, submit the complete revised prompt to the same verified model with the same supported settings. Generate one second-version image and inspect the actual result. Deliver the original reference, version 1 and version 2 with clear labels, the full final prompt, the comparison and a brief evidence-based assessment of improvements and remaining differences. Provide native image previews and usable download links/files when supported. Save full prompts as UTF-8 text when possible; do not claim saved artifacts without actually writing them. If version 2 is worse in some respects, say so rather than declaring automatic success.
 
-Stop after these **two generation requests per source**. Do not enter an unlimited generate/compare loop or silently generate extra candidates. If the user supplied version 1, only one new request is needed for version 2. A second-round failure returns the completed first image, revised prompt and truthful failure status. Further rounds require a new user request. Installation, analysis-only and comparison-only requests do not trigger unrequested generation.
+Stop after these **two generation requests per source**. Do not enter an unlimited generate/compare loop or silently generate extra candidates. If the user supplied version 1, only one new request is needed for version 2. A second-round failure returns the completed first image, revised prompt and truthful failure status. After these two reference-stage requests, invite the user to upload their own photo and wait. The later personal-photo generation is a separate request explicitly triggered by the user’s photo and request. Further reference-stage iterations require a new request. Installation, analysis-only and comparison-only requests do not trigger unrequested generation.
+
+## Stage 3 — Personal photo and selected prompt
+
+After the reference stage, ask the user to upload their own photo and say “用我的照片做同款”. Do not assume the reference photo is their personal photo or reuse a generated image as an identity reference. When the user supplies their photo and requests the same look, use the **full second-version prompt** associated with the selected reference as the default; use version 1 only when the user explicitly chooses it. If multiple reference images or prompt versions could apply and the selection is unclear, ask which reference/version; do not silently guess. Preserve the chosen prompt in full and append this exact paragraph without changing it:
+
+请优先保留上传照片中的真实人物身份特征，尤其保留脸型轮廓、眼型、眼距、鼻梁、鼻头、唇形、下颌线、面部留白、发际线、刘海状态与整体神态辨识度。最终生成结果必须让人一眼看出与上传照片为同一人，而不是仅保留大致气质。姿势可以不一样。
+
+The personal image is the **only image supplied as the identity reference** to the image generation tool. The original reference image and generated examples are for visual analysis and comparison, not inputs to a direct reference-plus-person face swap. Submit the complete selected prompt plus the exact paragraph and personal photo to the verified Seedream 5.5 tool as an image-guided request. Person-specific appearance, hairline and fringe from the personal photo take precedence over conflicting identity or hairline/fringe descriptions of the original reference; the original prompt still supplies composition, clothing, light, scene and mood where compatible. Do not silently discard other prompt sections or claim guaranteed identity accuracy. The user can explicitly request a different pose; otherwise use the reference prompt’s pose as the target.
+
+Request one personal result, inspect it if supported, present the actual image with the exact complete submitted text or a complete downloadable text file, and report any visible identity mismatch honestly. If the tool cannot accept a photo plus the complete prompt, or the required model cannot be verified, explain the limitation and stop; do not replace the model or perform a face swap. A failed or uncertain job must not be resubmitted automatically. Do not upload personal photos to GitHub. A user's additional request is required for another personal generation.
+
+The ±200-character constraint applies to each complete reference-stage prompt before this personal identity paragraph is appended. Preserve both the full validated prompt and the exact appended paragraph; report combined length separately if measured. Do not shorten the original prompt to accommodate the paragraph.
 
 ## Length requirement
 
@@ -62,4 +74,4 @@ The checker reads the bundled baseline and exits nonzero on any failure. An equi
 
 ## Final review
 
-Before delivery check: correct image mapping; 3:4 throughout; no carried-over example scene; no invented hidden details or fixed-person appearance; makeup and expression analyzed distinctly; consistent lighting direction and exposure; spatial estimates internally consistent; tailored negative constraints; complete standalone prompts; length validated or limitation disclosed; verified model selection for actual generation; no generation in analysis-only mode; at most two generation requests per source; actual results inspected before comparison; accurate progress and artifact links. Describe observable results, not guaranteed pixel-perfect reproduction.
+Before delivery check: correct image mapping; 3:4 throughout; no carried-over example scene; no invented hidden details or fixed-person appearance; makeup and expression analyzed distinctly; consistent lighting direction and exposure; spatial estimates internally consistent; tailored negative constraints; complete standalone prompts; length validated or limitation disclosed; verified model selection for actual generation; no generation in analysis-only mode; at most two reference-stage generation requests per source and one explicitly requested personal-photo generation; actual results inspected before comparison; accurate progress and artifact links. Describe observable results, not guaranteed pixel-perfect reproduction.
